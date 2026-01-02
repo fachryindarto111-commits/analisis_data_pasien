@@ -1,18 +1,68 @@
+"""
+Sistem Analisis Data Pasien dan Tren Kesehatan
+Menu utama untuk mengakses berbagai fitur analisis data pasien.
+"""
 
-from functools import cache
-import pandas as pd
-import matplotlib.pyplot as plt
+import sys
+from typing import Optional
 
-@cache
-def load_data_pasients():
-    df = pd.read_csv('data_pasien.csv')
-    return df
+from config import MENU_BORDER_LENGTH
+from data_loader import (
+    load_data_patients, 
+    DataLoadError,
+    get_unique_patients_count
+)
+from health_analyzer import (
+    calculate_statistics,
+    get_patient_summary,
+    add_risk_categories,
+    calculate_final_risk_category,
+    get_risk_distribution,
+    get_indicator_counts,
+    get_daily_averages,
+    get_top_risk_patients,
+    get_all_statistics
+)
+from visualizer import (
+    plot_blood_pressure_trend,
+    plot_blood_sugar_trend,
+    plot_cholesterol_trend,
+    plot_comparison,
+    plot_risk_categories,
+    plot_average_indicators,
+    plot_high_risk_patients
+)
 
 
-def tampilkan_menu():
-    print("\n" + "="*60)
-    print("      SISTEM ANALISIS DATA PASIEN DAN TREN KESEHATAN")
-    print("="*60)
+def print_header(title: str, width: int = MENU_BORDER_LENGTH) -> None:
+    """
+    Print a formatted header.
+    
+    Args:
+        title: Title text to display.
+        width: Total width of the border.
+    """
+    print("\n" + "=" * width)
+    print(f"{title:^{width}}")
+    print("=" * width)
+
+
+def print_subheader(title: str, width: int = MENU_BORDER_LENGTH) -> None:
+    """
+    Print a formatted subheader.
+    
+    Args:
+        title: Subheader text to display.
+        width: Total width of the border.
+    """
+    print("\n" + "=" * width)
+    print(f"{title:^{width}}")
+    print("=" * width)
+
+
+def show_menu() -> None:
+    """Display the main menu."""
+    print_header("SISTEM ANALISIS DATA PASIEN DAN TREN KESEHATAN")
     print("1. Tampilkan Ringkasan Data")
     print("2. Analisis Data Kesehatan")
     print("3. Grafik Tren Tekanan Darah")
@@ -23,282 +73,184 @@ def tampilkan_menu():
     print("8. Rata-Rata Indikator")
     print("9. Pasien Risiko Tinggi")
     print("10. Keluar")
-    print("="*60)
+    print("=" * MENU_BORDER_LENGTH)
 
-def ringkasan_data():
-    df =load_data_pasients()
-    
-    print("\n" + "="*92)
-    print("                                    RINGKASAN DATA PASIEN")
-    print("="*92)
-    
-    print("\n" + "="*92)
-    print("                                     INFORMASI DATASET")
-    print("="*92)
-    jumlah_pasien_unik = df['id_pasien'].nunique()
-    umur_min = df['umur'].min()
-    umur_max = df['umur'].max()
-    umur_rata = df['umur'].mean()
-    
-    print(f"Jumlah Pasien Unik: {jumlah_pasien_unik}")
-    print(f"Rentang Umur: {umur_min} - {umur_max} tahun")
-    print(f"Rata-rata Umur: {umur_rata:.1f} tahun")
-    print(f"Total Pemeriksaan: {df.shape[0]} kali")
-    print(f"Jumlah Kolom: {df.shape[1]}")
 
-def analisis_kesehatan():
-    df =load_data_pasients()
-    
-    print("\n" + "="*36)
-    print("    ANALISIS STATISTIK KESEHATAN")
-    print("="*36)
-    
-    rata_tekanan = df['tekanan_darah'].mean()
-    print(f"Rata-rata Tekanan Darah: {rata_tekanan:.2f} mmHg")
-    
-    rata_gula = df['gula_darah'].mean()
-    print(f"Rata-rata Gula Darah: {rata_gula:.2f} mg/dL")
-    
-    rata_kolesterol = df['kolesterol'].mean()
-    print(f"Rata-rata Kolesterol: {rata_kolesterol:.2f} mg/dL")
-    
-    print("\n" + "="*44)
-    print("             STATISTIK LENGKAP")
-    print("="*44)
-    print(df[['tekanan_darah', 'gula_darah', 'kolesterol']].describe())
-    
-    df['kategori_tekanan'] = 'Normal'
-    df.loc[df['tekanan_darah'] >= 120, 'kategori_tekanan'] = 'Perlu Waspada'
-    df.loc[df['tekanan_darah'] > 140, 'kategori_tekanan'] = 'Risiko Tinggi'
-    
-    df['kategori_gula'] = 'Normal'
-    df.loc[df['gula_darah'] >= 100, 'kategori_gula'] = 'Perlu Waspada'
-    df.loc[df['gula_darah'] > 125, 'kategori_gula'] = 'Risiko Tinggi'
-    
-    df['kategori_kolesterol'] = 'Normal'
-    df.loc[df['kolesterol'] >= 200, 'kategori_kolesterol'] = 'Perlu Waspada'
-    df.loc[df['kolesterol'] > 240, 'kategori_kolesterol'] = 'Risiko Tinggi'
-    
-    print("\n" + "="*41)
-    print("KATEGORI RISIKO BERDASARKAN TEKANAN DARAH")
-    print("="*41)
-    print(df.groupby('kategori_tekanan')['id_pasien'].count())
-    
-    print("\n" + "="*38)
-    print("KATEGORI RISIKO BERDASARKAN GULA DARAH")
-    print("="*38)
-    print(df.groupby('kategori_gula')['id_pasien'].count())
-    
-    print("\n" + "="*38)
-    print("KATEGORI RISIKO BERDASARKAN KOLESTEROL")
-    print("="*38)
-    print(df.groupby('kategori_kolesterol')['id_pasien'].count())
-
-def grafik_tekanan_darah():
-    df =load_data_pasients()
-    tekanan_harian = df.groupby('tanggal_periksa')['tekanan_darah'].mean()
-    
-    plt.figure(figsize=(12, 6))
-    plt.plot(tekanan_harian.index, tekanan_harian.values, marker='o', linewidth=2, markersize=8, color='red')
-    plt.title('Grafik Tren Tekanan Darah', fontsize=16, fontweight='bold')
-    plt.xlabel('Tanggal Pemeriksaan', fontsize=12)
-    plt.ylabel('Rata-rata Tekanan Darah (mmHg)', fontsize=12)
-    plt.xticks(rotation=45)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-    
-    print("\nGrafik Tren Tekanan Darah telah ditampilkan!")
-
-def grafik_gula_darah():
-    df =load_data_pasients()
-    gula_harian = df.groupby('tanggal_periksa')['gula_darah'].mean()
-    
-    plt.figure(figsize=(12, 6))
-    plt.plot(gula_harian.index, gula_harian.values, marker='s', linewidth=2, markersize=8, color='green')
-    plt.title('Grafik Tren Gula Darah', fontsize=16, fontweight='bold')
-    plt.xlabel('Tanggal Pemeriksaan', fontsize=12)
-    plt.ylabel('Rata-rata Gula Darah (mg/dL)', fontsize=12)
-    plt.xticks(rotation=45)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-    
-    print("\nGrafik Tren Gula Darah telah ditampilkan!")
-
-def grafik_kolesterol():
-    df =load_data_pasients()
-    kolesterol_harian = df.groupby('tanggal_periksa')['kolesterol'].mean()
-    
-    plt.figure(figsize=(12, 6))
-    plt.plot(kolesterol_harian.index, kolesterol_harian.values, marker='^', linewidth=2, markersize=8, color='blue')
-    plt.title('Grafik Tren Kolesterol', fontsize=16, fontweight='bold')
-    plt.xlabel('Tanggal Pemeriksaan', fontsize=12)
-    plt.ylabel('Rata-rata Kolesterol (mg/dL)', fontsize=12)
-    plt.xticks(rotation=45)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-    
-    print("\nGrafik Tren Kolesterol telah ditampilkan!")
-
-def grafik_perbandingan():
-    df =load_data_pasients()
-    
-    tekanan_harian = df.groupby('tanggal_periksa')['tekanan_darah'].mean()
-    gula_harian = df.groupby('tanggal_periksa')['gula_darah'].mean()
-    kolesterol_harian = df.groupby('tanggal_periksa')['kolesterol'].mean()
-    
-    plt.figure(figsize=(15, 7))
-    
-    plt.subplot(3, 1, 1)
-    plt.plot(tekanan_harian.index, tekanan_harian.values, marker='o', linewidth=2, markersize=6, color='red')
-    plt.title('Grafik Tren Tekanan Darah', fontsize=14, fontweight='bold')
-    plt.ylabel('Tekanan Darah (mmHg)', fontsize=11)
-    plt.xticks(rotation=45)
-    plt.grid(True, alpha=0.3)
-    
-    plt.subplot(3, 1, 2)
-    plt.plot(gula_harian.index, gula_harian.values, marker='s', linewidth=2, markersize=6, color='green')
-    plt.title('Grafik Tren Gula Darah', fontsize=14, fontweight='bold')
-    plt.ylabel('Gula Darah (mg/dL)', fontsize=11)
-    plt.xticks(rotation=45)
-    plt.grid(True, alpha=0.3)
-    
-    plt.subplot(3, 1, 3)
-    plt.plot(kolesterol_harian.index, kolesterol_harian.values, marker='^', linewidth=2, markersize=6, color='blue')
-    plt.title('Grafik Tren Kolesterol', fontsize=14, fontweight='bold')
-    plt.xlabel('Tanggal Pemeriksaan', fontsize=11)
-    plt.ylabel('Kolesterol (mg/dL)', fontsize=11)
-    plt.xticks(rotation=45)
-    plt.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.show()
-    
-    print("\nGrafik Perbandingan Semua Indikator telah ditampilkan!")
-
-def kategori_risiko():
-    df =load_data_pasients()
-    
-    df['kategori_tekanan'] = 'Normal'
-    df.loc[df['tekanan_darah'] >= 120, 'kategori_tekanan'] = 'Perlu Waspada'
-    df.loc[df['tekanan_darah'] > 140, 'kategori_tekanan'] = 'Risiko Tinggi'
-    
-    df['kategori_gula'] = 'Normal'
-    df.loc[df['gula_darah'] >= 100, 'kategori_gula'] = 'Perlu Waspada'
-    df.loc[df['gula_darah'] > 125, 'kategori_gula'] = 'Risiko Tinggi'
-    
-    df['kategori_kolesterol'] = 'Normal'
-    df.loc[df['kolesterol'] >= 200, 'kategori_kolesterol'] = 'Perlu Waspada'
-    df.loc[df['kolesterol'] > 240, 'kategori_kolesterol'] = 'Risiko Tinggi'
-    
-    df['kategori_akhir'] = 'Normal'
-    
-    kondisi_waspada = ((df['kategori_tekanan'] == 'Perlu Waspada') | 
-                       (df['kategori_gula'] == 'Perlu Waspada') | 
-                       (df['kategori_kolesterol'] == 'Perlu Waspada'))
-    df.loc[kondisi_waspada, 'kategori_akhir'] = 'Perlu Waspada'
-    
-    kondisi_tinggi = ((df['kategori_tekanan'] == 'Risiko Tinggi') | 
-                      (df['kategori_gula'] == 'Risiko Tinggi') | 
-                      (df['kategori_kolesterol'] == 'Risiko Tinggi'))
-    df.loc[kondisi_tinggi, 'kategori_akhir'] = 'Risiko Tinggi'
-    
-    kategori_count = df.groupby('kategori_akhir')['id_pasien'].count()
-    
-    plt.figure(figsize=(10, 8))
-    colors = ['green', 'orange', 'red']
-    explode = (0.1, 0, 0)
-    
-    plt.pie(kategori_count.values, labels=kategori_count.index, autopct='%1.1f%%', 
-            startangle=90, colors=colors, explode=explode, shadow=True, textprops={'fontsize': 12})
-    plt.title('Kategori Risiko Kesehatan Pasien', fontsize=16, fontweight='bold', pad=20)
-    plt.tight_layout()
-    plt.show()
-    
-    print("\nKategori Risiko Kesehatan Pasien telah ditampilkan!")
-
-def rata_rata_indikator():
-    df =load_data_pasients()
-    
-    rata_tekanan = df['tekanan_darah'].mean()
-    rata_gula = df['gula_darah'].mean()
-    rata_kolesterol = df['kolesterol'].mean()
-    
-    indikator = ['Tekanan Darah', 'Gula Darah', 'Kolesterol']
-    nilai = [rata_tekanan, rata_gula, rata_kolesterol]
-    warna = ['red', 'green', 'blue']
-    
-    plt.figure(figsize=(10, 6))
-    bars = plt.bar(indikator, nilai, color=warna, alpha=0.7, edgecolor='black', linewidth=1.5)
-    
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height,
-                 f'{height:.2f}',
-                 ha='center', va='bottom', fontsize=12, fontweight='bold')
-    
-    plt.title('Rata-Rata Indikator Kesehatan Pasien', fontsize=16, fontweight='bold')
-    plt.ylabel('Nilai Rata-Rata', fontsize=12)
-    plt.xlabel('Indikator Kesehatan', fontsize=12)
-    plt.grid(axis='y', alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-    
-    print("\nRata-Rata Indikator Kesehatan Pasien telah ditampilkan!")
-
-def risiko_tertinggi():
-    df =load_data_pasients()
-    
-    pasien_stats = df.groupby('nama')[['tekanan_darah', 'gula_darah', 'kolesterol']].mean()
-    top_pasien = pasien_stats.sort_values('tekanan_darah', ascending=False).head(5)
-    
-    plt.figure(figsize=(12, 6))
-    x = range(len(top_pasien))
-    width = 0.25
-    
-    plt.bar([i - width for i in x], top_pasien['tekanan_darah'], width=width, label='Tekanan Darah', color='red', alpha=0.7)
-    plt.bar(x, top_pasien['gula_darah'], width=width, label='Gula Darah', color='green', alpha=0.7)
-    plt.bar([i + width for i in x], top_pasien['kolesterol'], width=width, label='Kolesterol', color='blue', alpha=0.7)
-    
-    plt.xlabel('Nama Pasien', fontsize=12)
-    plt.ylabel('Nilai Indikator', fontsize=12)
-    plt.title('Pasien Risiko Tertinggi', fontsize=16, fontweight='bold')
-    plt.xticks(x, top_pasien.index, rotation=45)
-    plt.legend()
-    plt.grid(axis='y', alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-    
-    print("\nPasien Risiko Tertinggi telah ditampilkan!")
-
-# Program Utama
-if __name__ == "__main__":
-    while True:
-        tampilkan_menu()
-        pilihan = input("Pilih menu (1-10): ")
+def option_summary() -> None:
+    """Display patient data summary."""
+    try:
+        df = load_data_patients()
+        summary = get_patient_summary(df)
         
-        match pilihan:
-            case '1':
-                ringkasan_data()
-            case '2':
-                analisis_kesehatan()
-            case '3':
-                grafik_tekanan_darah()
-            case '4':
-                grafik_gula_darah()
-            case '5':
-                grafik_kolesterol()
-            case '6':
-                grafik_perbandingan()
-            case '7':
-                kategori_risiko()
-            case '8':
-                rata_rata_indikator()
-            case '9':
-                risiko_tertinggi()
-            case '10':
-                print("Terima kasih telah menggunakan sistem ini. Sampai jumpa!")
+        print_subheader("RINGKASAN DATA PASIEN")
+        print_subheader("INFORMASI DATASET")
         
+        print(f"Jumlah Pasien Unik: {summary['unique_patients']}")
+        print(f"Rentang Umur: {summary['min_age']} - {summary['max_age']} tahun")
+        print(f"Rata-rata Umur: {summary['mean_age']:.1f} tahun")
+        print(f"Total Pemeriksaan: {summary['total_examinations']} kali")
+        print(f"Jumlah Kolom: {summary['total_columns']}")
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_health_analysis() -> None:
+    """Display detailed health analysis."""
+    try:
+        df = load_data_patients()
+        stats = calculate_statistics(df)
+        
+        print_subheader("ANALISIS STATISTIK KESEHATAN")
+        
+        print(f"Rata-rata Tekanan Darah: {stats.mean_tekanan:.2f} mmHg")
+        print(f"Rata-rata Gula Darah: {stats.mean_gula:.2f} mg/dL")
+        print(f"Rata-rata Kolesterol: {stats.mean_kolesterol:.2f} mg/dL")
+        
+        print_subheader("STATISTIK LENGKAP", 44)
+        print(get_all_statistics(df))
+        
+        # Categorize and display risk distributions
+        categorized_df = add_risk_categories(df)
+        
+        print_subheader("KATEGORI RISIKO BERDASARKAN TEKANAN DARAH", 41)
+        print(get_indicator_counts(categorized_df, 'kategori_tekanan'))
+        
+        print_subheader("KATEGORI RISIKO BERDASARKAN GULA DARAH", 38)
+        print(get_indicator_counts(categorized_df, 'kategori_gula'))
+        
+        print_subheader("KATEGORI RISIKO BERDASARKAN KOLESTEROL", 38)
+        print(get_indicator_counts(categorized_df, 'kategori_kolesterol'))
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_blood_pressure_chart() -> None:
+    """Display blood pressure trend chart."""
+    try:
+        df = load_data_patients()
+        daily_data = get_daily_averages(df)
+        plot_blood_pressure_trend(daily_data)
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_blood_sugar_chart() -> None:
+    """Display blood sugar trend chart."""
+    try:
+        df = load_data_patients()
+        daily_data = get_daily_averages(df)
+        plot_blood_sugar_trend(daily_data)
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_cholesterol_chart() -> None:
+    """Display cholesterol trend chart."""
+    try:
+        df = load_data_patients()
+        daily_data = get_daily_averages(df)
+        plot_cholesterol_trend(daily_data)
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_comparison_chart() -> None:
+    """Display comparison chart for all indicators."""
+    try:
+        df = load_data_patients()
+        daily_data = get_daily_averages(df)
+        plot_comparison(daily_data)
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_risk_categories() -> None:
+    """Display risk category pie chart."""
+    try:
+        df = load_data_patients()
+        categorized_df = add_risk_categories(df)
+        final_df = calculate_final_risk_category(categorized_df)
+        risk_counts = get_risk_distribution(final_df)
+        plot_risk_categories(risk_counts)
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_average_indicators() -> None:
+    """Display average indicators bar chart."""
+    try:
+        df = load_data_patients()
+        stats = calculate_statistics(df)
+        plot_average_indicators(stats.mean_tekanan, stats.mean_gula, stats.mean_kolesterol)
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def option_high_risk_patients() -> None:
+    """Display high-risk patients chart."""
+    try:
+        df = load_data_patients()
+        top_patients = get_top_risk_patients(df)
+        plot_high_risk_patients(top_patients)
+    except DataLoadError as e:
+        print(f"Error: {e}")
+
+
+def handle_choice(choice: str) -> bool:
+    """
+    Handle menu choice.
+    
+    Args:
+        choice: User's menu choice.
+        
+    Returns:
+        bool: True if program should continue, False if should exit.
+    """
+    options = {
+        '1': option_summary,
+        '2': option_health_analysis,
+        '3': option_blood_pressure_chart,
+        '4': option_blood_sugar_chart,
+        '5': option_cholesterol_chart,
+        '6': option_comparison_chart,
+        '7': option_risk_categories,
+        '8': option_average_indicators,
+        '9': option_high_risk_patients,
+    }
+    
+    if choice in options:
+        options[choice]()
         input("\nTekan Enter untuk melanjutkan...")
+        return True
+    elif choice == '10':
+        print("Terima kasih telah menggunakan sistem ini. Sampai jumpa!")
+        return False
+    else:
+        print("Pilihan tidak valid. Silakan pilih menu 1-10.")
+        return True
+
+
+def main() -> None:
+    """Main program loop."""
+    while True:
+        try:
+            show_menu()
+            choice = input("Pilih menu (1-10): ").strip()
+            
+            if not choice:
+                continue
+                
+            if not handle_choice(choice):
+                break
+                
+        except KeyboardInterrupt:
+            print("\n\nProgram dihentikan.")
+            break
+        except Exception as e:
+            print(f"Terjadi kesalahan: {e}")
+            input("\nTekan Enter untuk melanjutkan...")
+
+
+if __name__ == "__main__":
+    main()
+
