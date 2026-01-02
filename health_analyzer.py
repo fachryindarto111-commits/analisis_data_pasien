@@ -4,8 +4,7 @@ Provides functions for analyzing patient health indicators and risk categories.
 """
 
 import pandas as pd
-import numpy as np
-from typing import Dict, Tuple, List
+from typing import Dict
 from dataclasses import dataclass
 
 import config as cfg

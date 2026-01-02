@@ -5,11 +5,7 @@ Provides functions to create various charts and graphs.
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-from typing import List, Optional
-
 import config as cfg
-
 
 def setup_plot(
     title: str, 

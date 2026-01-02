@@ -3,14 +3,10 @@ Sistem Analisis Data Pasien dan Tren Kesehatan
 Menu utama untuk mengakses berbagai fitur analisis data pasien.
 """
 
-import sys
-from typing import Optional
-
 from config import MENU_BORDER_LENGTH
 from data_loader import (
     load_data_patients, 
     DataLoadError,
-    get_unique_patients_count
 )
 from health_analyzer import (
     calculate_statistics,
