@@ -13,3 +13,41 @@ wheels/
 .vscode/
 .idea/
 *.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+.env
+.env.*
+# Logs and databases
+*.log
+*.sqlite3
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.coverage
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/ 
+# Static files
+staticfiles/
+media/
+# Celery beat schedule file
+celerybeat-schedule
+# Sphinx documentation build
+docs/_build/
+# Pytest cache
+.pytest_cache/
+# Migrations
+migrations/ 
+*/migrations/
+# Temporary files
+tmp/
+temp/   
+*.tmp
+# Backup files
+*~.bak
+*.swp   
